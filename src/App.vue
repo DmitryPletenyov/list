@@ -15,6 +15,7 @@
       @click="addNewItem">
       Save
     </button>
+    {{ sortingType }} , {{ printValue }}
     <Item v-for="item in sortedItems" :key="item.id" :item="item" />
 
     <div id="radiobuttons">
@@ -48,15 +49,21 @@ export default defineComponent({
     };
   },
   computed: {
+    printValue() {
+      let t = this.sortingType as number;
+      return t == 2;
+    },
     sortedItems() {
       let sortedItems = this.items as ListItem[];
-
-      if (this.sortingType === SortingType.DateAdded) {
+      let st = this.sortingType as number;
+      if (st == 2) {
+        /* by value */
         sortedItems = sortedItems.sort((a, b) => {
-          return a.date.getTime() - b.date.getTime();
+          return b.date.getTime() - a.date.getTime();
         });
       }
-      if (this.sortingType === SortingType.Value) {
+      if (st == 1) {
+        /* by date */
         sortedItems = sortedItems.sort((a, b) => {
           let na = a.name.toLowerCase(),
             nb = b.name.toLowerCase();
