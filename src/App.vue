@@ -4,19 +4,29 @@
       v-model="newItemText"
       type="text"
       placeholder="Search or Add..."
-      @keyup.enter="filter" />
-    <button v-show="isFiltering" class="btn" @click="stopFilter">
-      Stop filtering
-    </button>
+      @keyup="trySearch"
+      @keyup.enter="addNewItem"
+      @keyup.esc="clearNewItem" />
     <button
-      v-show="!isFiltering"
       class="btn btn-primary"
-      :disabled="newItemText.length === 0"
+      :disabled="newItemText.length === 0 || matchFound"
       @click="addNewItem">
       Save
     </button>
-    {{ sortingType }} , {{ printValue }}
-    <Item v-for="item in sortedItems" :key="item.id" :item="item" />
+    <button
+      v-show="!matchFound && newItemText.length > 0"
+      class="btn"
+      :disabled="newItemText.length === 0"
+      @click="clearNewItem">
+      Clear
+    </button>
+    <Item
+      v-for="item in sortedItems"
+      :key="item.id"
+      :item="item"
+      @item-remove="onItemRemove"
+      @mouseover="item.showRemoveButton = true"
+      @mouseout="item.showRemoveButton = false" />
 
     <div id="radiobuttons">
       <input id="byValue" v-model="sortingType" type="radio" value="1" />
@@ -31,28 +41,30 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 import Item from './components/Item.vue';
-import { ListItem, SortingType } from './types';
-import { formatDistance, subDays, subMinutes } from 'date-fns';
+import {
+  ListItem,
+  SortingType,
+  readListItemArray,
+  writeListItemArray,
+} from './types';
+import { formatDistance } from 'date-fns';
 
 export default defineComponent({
   name: 'App',
   components: {
     Item,
   },
+  emits: ['itemRemove'],
   data() {
     return {
       newItemText: '',
-      items: [] as ListItem[],
+      items: readListItemArray(),
       nextItemId: 1,
-      isFiltering: false,
+      matchFound: false,
       sortingType: SortingType.DateAdded,
     };
   },
   computed: {
-    printValue() {
-      let t = this.sortingType as number;
-      return t == 2;
-    },
     sortedItems() {
       let sortedItems = this.items as ListItem[];
       let st = this.sortingType as number;
@@ -77,37 +89,66 @@ export default defineComponent({
         });
       }
       return sortedItems;
-      //return this.items.sort((a, b) => new Date(a.created) - new Date(b.created));
     },
   },
   methods: {
     addNewItem() {
-      this.items.push({
-        id: this.items.length + 1,
-        name: this.newItemText,
-        date: new Date(),
-        dateSpan: '',
-        match: false,
-      });
-      this.newItemText = '';
-      this.items.forEach((element) => {
-        element.dateSpan = formatDistance(element.date, new Date(), {
-          addSuffix: true,
+      if (!this.matchFound) {
+        let o = {
+          id: this.items.length + 1,
+          name: this.newItemText,
+          date: new Date(),
+          dateSpan: '',
+          match: false,
+          showRemoveButton: false,
+        } as ListItem;
+
+        this.items.push(o);
+        this.newItemText = '';
+        this.items.forEach((element) => {
+          element.dateSpan = formatDistance(element.date, new Date(), {
+            addSuffix: true,
+          });
         });
-      });
+        writeListItemArray(this.items);
+      }
     },
-    filter() {
-      this.isFiltering = true;
-      this.items.forEach((element) => {
-        element.match = element.name === this.newItemText;
-      });
-    },
-    stopFilter() {
-      this.isFiltering = false;
+    clearNewItem() {
       this.newItemText = '';
       this.items.forEach((element) => {
         element.match = false;
       });
+      this.matchFound = false;
+    },
+    trySearch() {
+      if (this.newItemText.length > 0) {
+        var found = false;
+        var searchString = this.newItemText.toLowerCase();
+        this.items.forEach((element) => {
+          element.match = element.name.toLowerCase() === searchString;
+          found = found || element.match;
+        });
+        this.matchFound = found;
+      } else {
+        this.items.forEach((element) => {
+          element.match = false;
+        });
+        this.matchFound = false;
+      }
+    },
+    onItemRemove(id: number) {
+      const index = this.items.findIndex((x) => x.id == id);
+      if (index > -1) {
+        this.items.splice(index, 1);
+        // no gap in ids inside array
+        this.items.forEach(function (i) {
+          if (i.id > index) {
+            i.id--;
+          }
+        });
+        this.trySearch();
+        writeListItemArray(this.items);
+      }
     },
   },
 });

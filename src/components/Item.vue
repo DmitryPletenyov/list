@@ -3,6 +3,11 @@
     <h4>{{ item.name }}</h4>
     <span v-show="item.match" style="color: green"><i>Exact match</i></span>
     <span>#{{ item.id }}</span>
+    <button
+      v-show="item.showRemoveButton"
+      @click="$emit('itemRemove', item.id)">
+      Remove
+    </button>
     <div class="date-div">{{ item.dateSpan }}</div>
   </div>
 </template>
@@ -12,7 +17,7 @@ import { formatDistance } from 'date-fns';
 import { ListItem } from '../types';
 export default {
   props: {
-    item: Object,
+    item: { type: ListItem },
   },
 };
 </script>
