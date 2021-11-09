@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue';
+import { defineComponent, onMounted, PropType } from 'vue';
 import Item from './components/Item.vue';
 import {
   ListItem,
@@ -48,20 +48,49 @@ import {
   writeListItemArray,
 } from './types';
 import { formatDistance } from 'date-fns';
+import { ref } from 'vue';
+import { useItems } from './hooks/useItems';
 
 export default defineComponent({
   name: 'App',
   components: {
     Item,
   },
+  props: {
+    //test: string,
+  },
   emits: ['itemRemove'],
+  setup(props) {
+    const items = ref([] as ListItem[]);
+    const nextItemId = ref(1);
+    const newItemText = ref('');
+    const matchFound = ref(false);
+    const sortingType = ref(SortingType.DateAdded);
+    const getListItemsArray = async () => {
+      items.value = readListItemArray();
+      nextItemId.value = items.value.length + 1;
+      newItemText.value = '';
+      matchFound.value = false;
+      sortingType.value = SortingType.DateAdded;
+    };
+
+    onMounted(getListItemsArray);
+    return {
+      items,
+      nextItemId,
+      newItemText,
+      matchFound,
+      sortingType,
+      getListItemsArray,
+    };
+  },
   data() {
     return {
-      newItemText: '',
-      items: readListItemArray(),
-      nextItemId: 1,
-      matchFound: false,
-      sortingType: SortingType.DateAdded,
+      //newItemText: '',
+      //items: readListItemArray(),
+      //nextItemId: 1,
+      //matchFound: false,
+      //sortingType: SortingType.DateAdded,
     };
   },
   computed: {
@@ -142,7 +171,7 @@ export default defineComponent({
         this.items.splice(index, 1);
         // no gap in ids inside array
         this.items.forEach(function (i) {
-          if (i.id > index) {
+          if (i.id > id) {
             i.id--;
           }
         });
