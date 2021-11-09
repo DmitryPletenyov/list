@@ -29,10 +29,10 @@
       @mouseout="item.showRemoveButton = false" />
 
     <div id="radiobuttons">
-      <input id="byValue" v-model="sortingType" type="radio" value="1" />
+      <input id="byValue" v-model="selectedSort" type="radio" value="1" />
       <label for="one">Sort By Value</label>
       <br />
-      <input id="byAddedDate" v-model="sortingType" type="radio" value="2" />
+      <input id="byAddedDate" v-model="selectedSort" type="radio" value="2" />
       <label for="two">Sort By Added Date</label>
     </div>
   </div>
@@ -41,15 +41,11 @@
 <script lang="ts">
 import { defineComponent, onMounted, PropType } from 'vue';
 import Item from './components/Item.vue';
-import {
-  ListItem,
-  SortingType,
-  readListItemArray,
-  writeListItemArray,
-} from './types';
+import { ListItem, writeListItemArray } from './types';
 import { formatDistance } from 'date-fns';
 import { ref } from 'vue';
 import { useItems } from './hooks/useItems';
+import { useSortedItems } from './hooks/useSortedItems';
 
 export default defineComponent({
   name: 'App',
@@ -61,65 +57,27 @@ export default defineComponent({
   },
   emits: ['itemRemove'],
   setup(props) {
-    const items = ref([] as ListItem[]);
-    const nextItemId = ref(1);
-    const newItemText = ref('');
-    const matchFound = ref(false);
-    const sortingType = ref(SortingType.DateAdded);
-    const getListItemsArray = async () => {
-      items.value = readListItemArray();
-      nextItemId.value = items.value.length + 1;
-      newItemText.value = '';
-      matchFound.value = false;
-      sortingType.value = SortingType.DateAdded;
-    };
+    const { items } = useItems();
+    const nextItemId = ref(items.value.length + 1);
+    const { sortedItems, selectedSort } = useSortedItems(items);
 
-    onMounted(getListItemsArray);
     return {
       items,
       nextItemId,
-      newItemText,
-      matchFound,
-      sortingType,
-      getListItemsArray,
+      sortedItems,
+      selectedSort,
     };
   },
   data() {
     return {
-      //newItemText: '',
+      newItemText: '',
       //items: readListItemArray(),
       //nextItemId: 1,
-      //matchFound: false,
-      //sortingType: SortingType.DateAdded,
+      matchFound: false,
+      //selectedSort: SortingType.DateAdded as number,
     };
   },
-  computed: {
-    sortedItems() {
-      let sortedItems = this.items as ListItem[];
-      let st = this.sortingType as number;
-      if (st == 2) {
-        /* by value */
-        sortedItems = sortedItems.sort((a, b) => {
-          return b.date.getTime() - a.date.getTime();
-        });
-      }
-      if (st == 1) {
-        /* by date */
-        sortedItems = sortedItems.sort((a, b) => {
-          let na = a.name.toLowerCase(),
-            nb = b.name.toLowerCase();
-          if (na < nb) {
-            return -1;
-          }
-          if (na > nb) {
-            return 1;
-          }
-          return 0;
-        });
-      }
-      return sortedItems;
-    },
-  },
+  computed: {},
   methods: {
     addNewItem() {
       if (!this.matchFound) {
@@ -132,9 +90,9 @@ export default defineComponent({
           showRemoveButton: false,
         } as ListItem;
 
-        this.items.push(o);
+        (this.items as ListItem[]).push(o);
         this.newItemText = '';
-        this.items.forEach((element) => {
+        (this.items as ListItem[]).forEach((element) => {
           element.dateSpan = formatDistance(element.date, new Date(), {
             addSuffix: true,
           });
@@ -144,7 +102,7 @@ export default defineComponent({
     },
     clearNewItem() {
       this.newItemText = '';
-      this.items.forEach((element) => {
+      (this.items as ListItem[]).forEach((element) => {
         element.match = false;
       });
       this.matchFound = false;
@@ -153,24 +111,24 @@ export default defineComponent({
       if (this.newItemText.length > 0) {
         var found = false;
         var searchString = this.newItemText.toLowerCase();
-        this.items.forEach((element) => {
+        (this.items as ListItem[]).forEach((element) => {
           element.match = element.name.toLowerCase() === searchString;
           found = found || element.match;
         });
         this.matchFound = found;
       } else {
-        this.items.forEach((element) => {
+        (this.items as ListItem[]).forEach((element) => {
           element.match = false;
         });
         this.matchFound = false;
       }
     },
     onItemRemove(id: number) {
-      const index = this.items.findIndex((x) => x.id == id);
+      const index = (this.items as ListItem[]).findIndex((x) => x.id == id);
       if (index > -1) {
         this.items.splice(index, 1);
         // no gap in ids inside array
-        this.items.forEach(function (i) {
+        (this.items as ListItem[]).forEach(function (i) {
           if (i.id > id) {
             i.id--;
           }

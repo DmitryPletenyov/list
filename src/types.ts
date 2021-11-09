@@ -8,7 +8,7 @@ export interface ListItem {
   match: boolean;
   showRemoveButton: boolean;
 }
-interface ListItemSerializable {
+export interface ListItemSerializable {
   id: number;
   name: string;
   date: string; // UTC date
@@ -18,8 +18,8 @@ export enum SortingType {
   DateAdded = 2,
 }
 // work with localstorage
-const localStorageKey = 'listItems';
-export function readListItemArray(): ListItem[] {
+export const localStorageKey = 'listItems';
+export function readListItemArray(): /*ListItem*/ [] {
   let r = new Array<ListItemSerializable>();
   const jsonString = localStorage.getItem(localStorageKey);
   if (jsonString !== null) {
@@ -33,7 +33,7 @@ export function readListItemArray(): ListItem[] {
     o.dateSpan = formatDistance(o.date, new Date(), { addSuffix: true });
     return o;
   });
-  return items;
+  return items as [];
 }
 export function writeListItemArray(items: ListItem[]): void {
   const r = items.map((i) => {
