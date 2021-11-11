@@ -1,25 +1,10 @@
 <template>
   <div class="items">
-    <input
-      v-model="newItemText"
-      type="text"
-      placeholder="Search or Add..."
-      @keyup="trySearch"
-      @keyup.enter="addNewItem"
-      @keyup.esc="clearNewItem" />
-    <button
-      class="btn btn-primary"
-      :disabled="newItemText.length === 0 || matchFound"
-      @click="addNewItem">
-      Save
-    </button>
-    <button
-      v-show="!matchFound && newItemText.length > 0"
-      class="btn"
-      :disabled="newItemText.length === 0"
-      @click="clearNewItem">
-      Clear
-    </button>
+    <InputBox
+      :match-found="matchFound"
+      :clear-function="clearNewItem"
+      :create-new-item-function="addNewItem"
+      :search-function="trySearch" />
     <Item
       v-for="item in sortedItems"
       :key="item.id"
@@ -39,21 +24,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, PropType } from 'vue';
+import { defineComponent } from 'vue';
 import Item from './components/Item.vue';
+import InputBox from './components/InputBox.vue';
 import { ListItem, writeListItemArray } from './types';
 import { formatDistance } from 'date-fns';
 import { ref } from 'vue';
 import { useItems } from './hooks/useItems';
 import { useSortedItems } from './hooks/useSortedItems';
+import _ from 'lodash';
 
 export default defineComponent({
   name: 'App',
   components: {
     Item,
-  },
-  props: {
-    //test: string,
+    InputBox,
   },
   emits: ['itemRemove'],
   setup(props) {
@@ -71,19 +56,16 @@ export default defineComponent({
   data() {
     return {
       newItemText: '',
-      //items: readListItemArray(),
-      //nextItemId: 1,
       matchFound: false,
-      //selectedSort: SortingType.DateAdded as number,
     };
   },
   computed: {},
   methods: {
-    addNewItem() {
+    addNewItem(newName: string) {
       if (!this.matchFound) {
         let o = {
           id: this.items.length + 1,
-          name: this.newItemText,
+          name: newName,
           date: new Date(),
           dateSpan: '',
           match: false,
@@ -106,13 +88,14 @@ export default defineComponent({
         element.match = false;
       });
       this.matchFound = false;
+      return true;
     },
-    trySearch() {
-      if (this.newItemText.length > 0) {
+    trySearch(searchString: string) {
+      if (searchString.length > 0) {
         var found = false;
-        var searchString = this.newItemText.toLowerCase();
+        var searchStringLower = searchString.toLowerCase();
         (this.items as ListItem[]).forEach((element) => {
-          element.match = element.name.toLowerCase() === searchString;
+          element.match = element.name.toLowerCase() === searchStringLower;
           found = found || element.match;
         });
         this.matchFound = found;
@@ -124,16 +107,19 @@ export default defineComponent({
       }
     },
     onItemRemove(id: number) {
-      const index = (this.items as ListItem[]).findIndex((x) => x.id == id);
-      if (index > -1) {
-        this.items.splice(index, 1);
-        // no gap in ids inside array
-        (this.items as ListItem[]).forEach(function (i) {
-          if (i.id > id) {
+      const typedArray = this.items as ListItem[];
+      const removed = _.remove(typedArray, function (i) {
+        return i.id == id;
+      });
+      // no gap in ids inside array
+      _.forEach(removed, function (removedItem) {
+        _.forEach(typedArray, function (i) {
+          if (i.id > removedItem.id) {
             i.id--;
           }
         });
-        this.trySearch();
+      });
+      if (removed.length > 0) {
         writeListItemArray(this.items);
       }
     },
