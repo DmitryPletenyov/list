@@ -1,17 +1,19 @@
 <template>
-  <div class="items">
-    <InputBox
-      :match-found="matchFound"
-      :clear-function="clearNewItem"
-      :create-new-item-function="addNewItem"
-      :search-function="trySearch" />
-    <Item
-      v-for="item in sortedItems"
-      :key="item.id"
-      :item="item"
-      @item-remove="onItemRemove"
-      @mouseover="item.showRemoveButton = true"
-      @mouseout="item.showRemoveButton = false" />
+  <div id="container">
+    <div id="items">
+      <InputBox
+        :match-found="matchFound"
+        :clear-function="clearNewItem"
+        :create-new-item-function="addNewItem"
+        :search-function="trySearch" />
+      <Item
+        v-for="item in sortedItems"
+        :key="item.id"
+        :item="item"
+        @item-remove="onItemRemove"
+        @mouseover="item.showRemoveButton = true"
+        @mouseout="item.showRemoveButton = false" />
+    </div>
 
     <div id="radiobuttons">
       <input id="byValue" v-model="selectedSort" type="radio" value="1" />
@@ -28,7 +30,6 @@ import { defineComponent } from 'vue';
 import Item from './components/Item.vue';
 import InputBox from './components/InputBox.vue';
 import { ListItem, writeListItemArray } from './types';
-import { formatDistance } from 'date-fns';
 import { ref } from 'vue';
 import { useItems } from './hooks/useItems';
 import { useSortedItems } from './hooks/useSortedItems';
@@ -55,7 +56,7 @@ export default defineComponent({
   },
   data() {
     return {
-      newItemText: '',
+      //newItemText: '',
       matchFound: false,
     };
   },
@@ -73,17 +74,10 @@ export default defineComponent({
         } as ListItem;
 
         (this.items as ListItem[]).push(o);
-        this.newItemText = '';
-        (this.items as ListItem[]).forEach((element) => {
-          element.dateSpan = formatDistance(element.date, new Date(), {
-            addSuffix: true,
-          });
-        });
         writeListItemArray(this.items);
       }
     },
     clearNewItem() {
-      this.newItemText = '';
       (this.items as ListItem[]).forEach((element) => {
         element.match = false;
       });
@@ -127,10 +121,23 @@ export default defineComponent({
 });
 </script>
 
-<style lang="scss" module>
-.items {
+<style lang="scss" scoped>
+#container {
+  margin: auto;
+  width: 50%;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+#items {
+  margin: auto;
+  //margin: 0 150px 0 0;
+  width: 500px;
   align-items: center;
   display: flex;
   flex-direction: column;
+}
+#radiobuttons {
+  width: 150px;
 }
 </style>

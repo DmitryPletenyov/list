@@ -1,10 +1,7 @@
-import { formatDistance } from 'date-fns';
-
 export interface ListItem {
   id: number;
   name: string;
   date: Date;
-  dateSpan: string;
   match: boolean;
   showRemoveButton: boolean;
 }
@@ -19,20 +16,23 @@ export enum SortingType {
 }
 // work with localstorage
 export const localStorageKey = 'listItems';
-export function readListItemArray(): /*ListItem*/ [] {
+export function readListItemArray(): [] {
   let r = new Array<ListItemSerializable>();
   const jsonString = localStorage.getItem(localStorageKey);
   if (jsonString !== null) {
     r = JSON.parse(jsonString);
   }
-  const items = r.map((i) => {
-    const o = {} as ListItem;
-    o.id = i.id;
-    o.name = i.name;
-    o.date = new Date(i.date);
-    o.dateSpan = formatDistance(o.date, new Date(), { addSuffix: true });
-    return o;
-  });
+
+  const items =
+    r.length > 0
+      ? r.map((i) => {
+          const o = {} as ListItem;
+          o.id = i.id;
+          o.name = i.name;
+          o.date = new Date(i.date);
+          return o;
+        })
+      : [];
   return items as [];
 }
 export function writeListItemArray(items: ListItem[]): void {

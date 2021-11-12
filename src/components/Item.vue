@@ -1,14 +1,14 @@
 <template>
-  <div class="item-row">
+  <div :class="{ matched: item.match }" class="item-row">
     <h4>{{ item.name }}</h4>
-    <span v-show="item.match" style="color: green"><i>Exact match</i></span>
-    <span>#{{ item.id }}</span>
+    <span v-show="item.match" class="matchedText"><i>Exact match</i></span>
+    <span class="number">#{{ item.id }}</span>
     <button
       v-show="item.showRemoveButton"
       @click="$emit('itemRemove', item.id)">
       Remove
     </button>
-    <div class="date-div">{{ item.dateSpan }}</div>
+    <div class="date-div">{{ dateDistanceString(item.date) }}</div>
   </div>
 </template>
 
@@ -19,24 +19,41 @@ export default {
   props: {
     item: { type: ListItem },
   },
+  methods: {
+    dateDistanceString(d) {
+      return formatDistance(d, new Date(), { addSuffix: true });
+    },
+  },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use '../sass/color';
+
+span.matchedText {
+  color: color.$matched;
+}
 .item-row {
-  border-bottom: 1px solid lightgray;
-  /*background-color: lightgray;*/
+  border-bottom: 1px solid color.$itemBorder;
   cursor: pointer;
   margin-bottom: 18px;
   padding: 20px;
   width: 500px;
 }
-.item-row:hover {
-  box-shadow: 0 3px 12px 0 rgba(0, 0, 0, 0.2);
+@mixin theme($theme: rgba(0, 0, 0, 0.2)) {
+  box-shadow: 0 3px 12px 0 $theme;
   transform: scale(1.01);
 }
-.item-row span {
-  color: darkgrey;
+.item-row:hover {
+  @include theme;
+}
+.matched:hover {
+  @include theme($theme: rgba(7, 146, 18, 0.2));
+  // box-shadow: 0 3px 12px 0 rgba(7, 146, 18, 0.2);
+  // transform: scale(1.01);
+}
+span.number {
+  color: color.$secondaryText;
 }
 .date-div {
   display: block;
