@@ -2,6 +2,7 @@
   <div id="container">
     <div id="items">
       <InputBox
+        ref="myInputBox1"
         :match-found="matchFound"
         :clear-function="clearNewItem"
         :create-new-item-function="addNewItem"
@@ -56,7 +57,6 @@ export default defineComponent({
   },
   data() {
     return {
-      //newItemText: '',
       matchFound: false,
     };
   },
@@ -115,6 +115,11 @@ export default defineComponent({
       });
       if (removed.length > 0) {
         writeListItemArray(this.items);
+        (this.items as ListItem[]).forEach((element) => {
+          element.match = false;
+        });
+        this.matchFound = false;
+        //console.log('after match');
       }
     },
   },
@@ -131,7 +136,6 @@ export default defineComponent({
 }
 #items {
   margin: auto;
-  //margin: 0 150px 0 0;
   width: 500px;
   align-items: center;
   display: flex;
